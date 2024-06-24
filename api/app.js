@@ -21,6 +21,7 @@ app.use(express.static(path.join(__dirname, "public")));
 
 app.use((req, res, next) => {
   console.log("Ben app.js ile tanımlanan bir middleware'im");
+  next();
 });
 
 app.use("/", indexRouter);
