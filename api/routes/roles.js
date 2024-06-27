@@ -1,45 +1,40 @@
-var express = require("express");
-var router = express.Router();
-const Categories = require("../db/models/Categories");
-const Response = require("../lib/Response");
+const express = require("express");
+const router = express.Router();
+
+const Roles = require("../db/models/Roles");
+const RolePriveleges = require("../db/models/RolePriveleges");
 const CustomError = require("../lib/Error");
+const Response = require("../lib/Response");
 const Enum = require("../config/Enum");
-/**
- * "C"reate
- * "R"ead
- * "U"pdate
- * "D"elete
- */
 
-/* GET categories listing. */
-router.get("/", async (req, res, next) => {
+router.get("/", async (req, res) => {
   try {
-    let categories = await Categories.find({});
+    let roles = await Roles.find({});
 
-    res.json(Response.successResponse(categories));
+    res.json(Response.successResponse(roles));
   } catch (err) {
-    let errorResponse = Response.errorResponse({ err });
-    res.status(errorResponse.code).json(Response.errorResponse(err));
+    let errorResponse = Response.errorResponse(err);
+    res.status(errorResponse.code).json(errorResponse);
   }
 });
 
 router.post("/add", async (req, res) => {
   let body = req.body;
   try {
-    if (!body.name)
+    if (!body.role_name)
       throw new CustomError(
         Enum.HTTP_CODES.BAD_REQUEST,
         "Validation Error!",
-        "name field must be filled"
+        "role_name field must be filled"
       );
-
-    let category = new Categories({
-      name: body.name,
+    let role = new Roles({
+      role_name: body.role_name,
       is_active: true,
       created_by: req.user?.id,
     });
 
-    await category.save;
+    await role.save();
+
     res.json(Response.successResponse({ success: true }));
   } catch (err) {
     let errorResponse = Response.errorResponse(err);
@@ -54,15 +49,15 @@ router.post("/update", async (req, res) => {
       throw new CustomError(
         Enum.HTTP_CODES.BAD_REQUEST,
         "Validation Error!",
-        "_id field must be filled"
+        "role_name field must be filled"
       );
-
     let updates = {};
+    if (body.role_name) updates.role_name = body.role_name;
 
-    if (body.name) updates.name = body.name;
     if (typeof body.is_active === "boolean") updates.is_active = body.is_active;
 
-    await Categories.updateOne({ _id: body._id }, updates);
+    await Roles.updateOne({ _id: body._id }, updates);
+
     res.json(Response.successResponse({ success: true }));
   } catch (err) {
     let errorResponse = Response.errorResponse(err);
@@ -72,19 +67,20 @@ router.post("/update", async (req, res) => {
 
 router.post("/delete", async (req, res) => {
   let body = req.body;
-
   try {
     if (!body._id)
       throw new CustomError(
         Enum.HTTP_CODES.BAD_REQUEST,
         "Validation Error!",
-        "_id field must be filled"
+        "role_name field must be filled"
       );
+    await Roles.remove({ _id: body._id });
 
-    await Categories.remove({ _id: body._id });
+    res.json(Response.successResponse({ success: true }));
   } catch (err) {
     let errorResponse = Response.errorResponse(err);
     res.status(errorResponse.code).json(errorResponse);
   }
 });
+
 module.exports = router;
